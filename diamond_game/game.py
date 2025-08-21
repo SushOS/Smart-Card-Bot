@@ -21,16 +21,16 @@ class RoundResult:
 class Game:
     human_names: List[str] = field(default_factory=lambda: ["Player 1", "Player 2"])
     human_suits: List[str] = field(default_factory=lambda: ["♥", "♦"])
-    bot_name: str = "Robot"
-    bot_suit: str = "♠"
-    bot_level: str = "medium"  # easy, medium, hard, expert
+    bot_names: List[str] = field(default_factory=lambda: ["Bot 1", "Bot 2"])
+    bot_suits: List[str] = field(default_factory=lambda: ["♠", "♣"])
+    bot_levels: List[str] = field(default_factory=lambda: ["medium", "hard"])
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     # runtime state
     deck: List[Card] = field(default_factory=list)
     round_no: int = 0
     humans: List[Player] = field(init=False)
-    bot: Bot = field(init=False)
+    bots: List[Bot] = field(init=False)
     remaining_diamonds: List[int] = field(default_factory=list)  # values only
     history: List[RoundResult] = field(default_factory=list)
     active: bool = True
@@ -41,8 +41,11 @@ class Game:
             p = Player(name, suit)
             p.initialize_hand()
             self.humans.append(p)
-        self.bot = Bot(self.bot_name, self.bot_suit, difficulty=LEVELS.get(self.bot_level, "matching"))
-        self.bot.initialize_hand()
+        self.bots = []
+        for name, suit, level in zip(self.bot_names, self.bot_suits, self.bot_levels):
+            b = Bot(name, suit, difficulty=LEVELS.get(level, "matching"))
+            b.initialize_hand()
+            self.bots.append(b)
         self.deck = diamond_deck()
         self.remaining_diamonds = [c.value for c in self.deck]
 
@@ -54,59 +57,40 @@ class Game:
             "game_id": self.id,
             "active": self.active and not self.is_over(),
             "round_no": self.round_no,
-            "scores": {f"player{i+1}": p.score for i, p in enumerate(self.humans)},
-            "bot": self.bot.score,
-            "remaining_human_cards": [p.remaining_values() for p in self.humans],
-            "remaining_bot_cards_count": len(self.bot.remaining_values()),
+            "scores": {f"bot{i+1}": b.score for i, b in enumerate(self.bots)},
+            "remaining_bot_cards": [b.remaining_values() for b in self.bots],
             "remaining_diamonds_count": len(self.deck) - self.round_no,
-            "bot_level": self.bot_level,
+            "bot_levels": self.bot_levels,
         }
 
-    def _resolve_points(self, human_cards: List[Card], bot_card: Card, diamond: Card) -> RoundResult:
+    def _resolve_points(self, bot_cards: List[Card], diamond: Card) -> RoundResult:
         # Find highest card value
-        all_cards = human_cards + [bot_card]
-        values = [c.value for c in all_cards]
+        values = [c.value for c in bot_cards]
         max_value = max(values)
-        winners = []
-        for i, c in enumerate(human_cards):
-            if c.value == max_value:
-                winners.append(f"player{i+1}")
-        if bot_card.value == max_value:
-            winners.append("bot")
+        winners = [f"bot{i+1}" for i, c in enumerate(bot_cards) if c.value == max_value]
         pts = diamond.value
-        # Split points among winners
         pts_per_winner = pts // len(winners)
         remainder = pts % len(winners)
-        for i, p in enumerate(self.humans):
-            if f"player{i+1}" in winners:
-                p.score += pts_per_winner
-        if "bot" in winners:
-            self.bot.score += pts_per_winner
+        for i, b in enumerate(self.bots):
+            if f"bot{i+1}" in winners:
+                b.score += pts_per_winner
         # Give remainder to first winner
         if winners:
-            if winners[0].startswith("player"):
-                idx = int(winners[0][-1]) - 1
-                self.humans[idx].score += remainder
-            else:
-                self.bot.score += remainder
+            idx = int(winners[0][-1]) - 1
+            self.bots[idx].score += remainder
         winner = winners if len(winners) > 1 else winners[0]
         return RoundResult(
             round_no=self.round_no,
             diamond=diamond,
-            human_play=human_cards[0],  # for compatibility, first player
-            bot_play=bot_card,
+            human_play=None,
+            bot_play=[str(c) for c in bot_cards],
             winner=winner,
             points=pts,
         )
 
-    def play_round(self, human_values: List[int]) -> RoundResult:
+    def play_round(self) -> RoundResult:
         if self.is_over():
             raise RuntimeError("Game is already over or inactive.")
-        if len(human_values) != len(self.humans):
-            raise ValueError("Must provide a value for each player.")
-        for i, v in enumerate(human_values):
-            if not self.humans[i].has_card(v):
-                raise ValueError(f"{self.humans[i].name} does not have {self.humans[i].suit}{v} available.")
 
         # Draw top diamond
         diamond = self.deck[self.round_no]
@@ -114,20 +98,18 @@ class Game:
         if diamond.value in self.remaining_diamonds:
             self.remaining_diamonds.remove(diamond.value)
 
-        # Human plays
-        human_cards = [p.play(v) for p, v in zip(self.humans, human_values)]
-
-        # Bot decides
-        known_user_remaining = [p.remaining_values() for p in self.humans]
-        # For bot strategy, flatten known_user_remaining
-        flat_known = [v for sub in known_user_remaining for v in sub]
-        bot_choice_value = choose_card(
-            self.bot, diamond.value, self.remaining_diamonds, flat_known
-        )
-        bot_card = self.bot.play(bot_choice_value)
+        # Each bot decides
+        bot_cards = []
+        for i, bot in enumerate(self.bots):
+            known_remaining = bot.remaining_values()
+            bot_choice_value = choose_card(
+                bot, diamond.value, self.remaining_diamonds, known_remaining
+            )
+            bot_card = bot.play(bot_choice_value)
+            bot_cards.append(bot_card)
 
         # Resolve
-        result = self._resolve_points(human_cards, bot_card, diamond)
+        result = self._resolve_points(bot_cards, diamond)
         self.history.append(result)
 
         if self.is_over():
@@ -138,8 +120,7 @@ class Game:
         self.active = False
 
     def summary(self) -> Dict:
-        scores = {f"player{i+1}": p.score for i, p in enumerate(self.humans)}
-        scores["bot"] = self.bot.score
+        scores = {f"bot{i+1}": b.score for i, b in enumerate(self.bots)}
         max_score = max(scores.values())
         winners = [k for k, v in scores.items() if v == max_score]
         winner = winners if len(winners) > 1 else winners[0]
@@ -147,12 +128,12 @@ class Game:
             "game_id": self.id,
             "winner": winner,
             "final_scores": scores,
+            "bot_levels": self.bot_levels,
             "rounds": [
                 {
                     "round": r.round_no,
                     "diamond": str(r.diamond),
-                    "human_play": str(r.human_play),
-                    "bot_play": str(r.bot_play),
+                    "bot_play": r.bot_play,
                     "winner": r.winner,
                     "points_awarded": r.points,
                 }

@@ -5,12 +5,14 @@ class GameManager:
     def __init__(self):
         self._games: Dict[str, Game] = {}
 
-    def create(self, human_names=None, human_suits=None, bot_level: str = "medium") -> Game:
-        if human_names is None:
-            human_names = ["Player 1"]
-        if human_suits is None:
-            human_suits = ["♥"]
-        g = Game(human_names=human_names, human_suits=human_suits, bot_level=bot_level)
+    def create(self, bot_names=None, bot_suits=None, bot_levels=None) -> Game:
+        if bot_names is None:
+            bot_names = ["Bot 1", "Bot 2"]
+        if bot_suits is None:
+            bot_suits = ["♠", "♣"]
+        if bot_levels is None:
+            bot_levels = ["medium", "hard"]
+        g = Game(bot_names=bot_names, bot_suits=bot_suits, bot_levels=bot_levels)
         self._games[g.id] = g
         return g
 
