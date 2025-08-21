@@ -75,20 +75,12 @@ class Game:
             winners.append("bot")
         pts = diamond.value
         # Split points among winners
-        pts_per_winner = pts // len(winners)
-        remainder = pts % len(winners)
+        pts_per_winner = pts / len(winners)
         for i, p in enumerate(self.humans):
             if f"player{i+1}" in winners:
                 p.score += pts_per_winner
         if "bot" in winners:
             self.bot.score += pts_per_winner
-        # Give remainder to first winner
-        if winners:
-            if winners[0].startswith("player"):
-                idx = int(winners[0][-1]) - 1
-                self.humans[idx].score += remainder
-            else:
-                self.bot.score += remainder
         winner = winners if len(winners) > 1 else winners[0]
         return RoundResult(
             round_no=self.round_no,
