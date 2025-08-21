@@ -123,3 +123,24 @@ Final Scores
 bot1,41
 bot2,50
 Winner,bot2
+
+Bot 1 Level,medium,Bot 2 Level,easy
+Round,Diamond,Bot 1 Play,Bot 2 Play,Winner,Points Awarded
+1,3 ♦,3 ♠,9 ♣,bot2,3
+2,2 ♦,2 ♠,11 ♣,bot2,2
+3,5 ♦,5 ♠,2 ♣,bot1,5
+4,8 ♦,8 ♠,7 ♣,bot1,8
+5,4 ♦,4 ♠,3 ♣,bot1,4
+6,6 ♦,6 ♠,8 ♣,bot2,6
+7,11 ♦,11 ♠,6 ♣,bot1,11
+8,7 ♦,7 ♠,5 ♣,bot1,7
+9,12 ♦,12 ♠,10 ♣,bot1,12
+10,9 ♦,9 ♠,4 ♣,bot1,9
+11,10 ♦,10 ♠,12 ♣,bot2,10
+12,13 ♦,13 ♠,13 ♣,"['bot1', 'bot2']",13
+13,1 ♦,1 ♠,1 ♣,"['bot1', 'bot2']",1
+
+Final Scores
+bot1,64
+bot2,27
+Winner,bot1

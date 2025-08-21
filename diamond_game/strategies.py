@@ -69,17 +69,15 @@ def choose_card(
     d = bot.difficulty.lower()
     if d == "random":
         return _pick_random(bot)
-    if d == "conservative":
-        return _pick_above_available(bot, diamond_value)
+    if d == "matching":
+        return _pick_matching(bot, diamond_value)
     if d == "smart":
         return _pick_smart(bot, diamond_value, remaining_diamonds, known_user_remaining)
-    # default "matching"
-    return _pick_matching(bot, diamond_value)
+    # fallback to random
+    return _pick_random(bot)
 
-# Map “levels” to strategies
 LEVELS = {
     "easy": "random",
     "medium": "matching",
-    "hard": "greedy",
     "expert": "smart",
 }

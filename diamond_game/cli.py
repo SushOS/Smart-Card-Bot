@@ -27,8 +27,15 @@ def prompt_player_count():
 def main():
     print(BANNER)
     print("Game mode: 2 bots will play against each other.")
-    bot1_level = input("Choose Bot 1 level [easy|medium|hard|expert] (default=medium): ").strip() or "medium"
-    bot2_level = input("Choose Bot 2 level [easy|medium|hard|expert] (default=hard): ").strip() or "hard"
+    allowed_levels = ["easy", "medium", "expert"]
+    def prompt_level(bot_name, default):
+        while True:
+            level = input(f"Choose {bot_name} level [easy|medium|expert] (default={default}): ").strip() or default
+            if level in allowed_levels:
+                return level
+            print("Please enter one of: easy, medium, expert.")
+    bot1_level = prompt_level("Bot 1", "medium")
+    bot2_level = prompt_level("Bot 2", "expert")
     bot_names = ["Bot 1", "Bot 2"]
     bot_suits = ["♠", "♣"]
     bot_levels = [bot1_level, bot2_level]
