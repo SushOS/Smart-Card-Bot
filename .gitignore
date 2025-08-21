@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+.env
+venv/
+ENV/
+.env.*
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Environment
+*.env
+.envrc
+
+# Test and coverage
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# Misc
+*.sqlite3
+*.db
+
+# Ignore requirements lock files
+requirements.lock
+
+# Ignore streamlit cache
+.streamlit/
