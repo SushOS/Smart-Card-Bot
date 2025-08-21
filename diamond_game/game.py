@@ -69,15 +69,10 @@ class Game:
         max_value = max(values)
         winners = [f"bot{i+1}" for i, c in enumerate(bot_cards) if c.value == max_value]
         pts = diamond.value
-        pts_per_winner = pts // len(winners)
-        remainder = pts % len(winners)
+        pts_per_winner = pts / len(winners)
         for i, b in enumerate(self.bots):
             if f"bot{i+1}" in winners:
                 b.score += pts_per_winner
-        # Give remainder to first winner
-        if winners:
-            idx = int(winners[0][-1]) - 1
-            self.bots[idx].score += remainder
         winner = winners if len(winners) > 1 else winners[0]
         return RoundResult(
             round_no=self.round_no,
